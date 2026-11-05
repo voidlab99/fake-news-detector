@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fake News Detector</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1b1f24; --muted:#6a727c; --line:#dfe3e8;
+          --real:#1a7f4b; --fake:#c0392b; --accent:#2f5bea; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12151a; --card:#1b1f26; --ink:#e8eaed; --muted:#9aa3ad; --line:#2c323b;
+            --real:#4cc38a; --fake:#ef7b6d; --accent:#7b9cff; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:40px 16px 64px; }
+  h1 { font-size:1.6rem; margin:0 0 4px; }
+  p.sub { color:var(--muted); margin:0 0 24px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  textarea { width:100%; min-height:220px; resize:vertical; padding:12px; border-radius:8px;
+             border:1px solid var(--line); background:transparent; color:inherit; font:inherit; }
+  textarea:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  .row { display:flex; gap:12px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:10px 18px;
+           font:inherit; font-weight:600; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--line); }
+  button:disabled { opacity:.55; cursor:default; }
+  .count { color:var(--muted); font-size:.85rem; margin-left:auto; }
+  #result { margin-top:20px; display:none; }
+  .verdict { font-size:1.4rem; font-weight:700; }
+  .verdict.REAL { color:var(--real); } .verdict.FAKE { color:var(--fake); }
+  .bar { height:12px; border-radius:6px; background:var(--line); overflow:hidden; margin:10px 0 6px; display:flex; }
+  .bar > span { display:block; height:100%; transition:width .4s ease; }
+  .bar .r { background:var(--real); } .bar .f { background:var(--fake); }
+  .legend { display:flex; justify-content:space-between; font-size:.85rem; color:var(--muted); }
+  .err { color:var(--fake); margin-top:16px; display:none; }
+  footer { margin-top:20px; font-size:.82rem; color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Fake News Detector</h1>
+  <p class="sub">Paste a news article (headline + body) and a fine-tuned DistilBERT model will classify it.</p>
+
+  <div class="card">
+    <textarea id="text" placeholder="Paste article text here…" maxlength="20000"></textarea>
+    <div class="row">
+      <button id="go">Analyze</button>
+      <button id="clear" class="ghost" type="button">Clear</button>
+      <span class="count" id="count">0 words</span>
+    </div>
+
+    <div id="result" aria-live="polite">
+      <div class="verdict" id="verdict"></div>
+      <div class="bar"><span class="r" id="barR"></span><span class="f" id="barF"></span></div>
+      <div class="legend"><span id="pR"></span><span id="pF"></span></div>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+  </div>
+
+  <footer>Predictions reflect writing patterns in the training data, not fact-checking. Treat the result as a signal, not a verdict.</footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const text = $("text"), go = $("go");
+
+text.addEventListener("input", () => {
+  const n = text.value.trim() ? text.value.trim().split(/\s+/).length : 0;
+  $("count").textContent = n + (n === 1 ? " word" : " words");
+});
+
+$("clear").addEventListener("click", () => {
+  text.value = ""; text.dispatchEvent(new Event("input"));
+  $("result").style.display = "none"; $("err").style.display = "none";
+});
+
+go.addEventListener("click", async () => {
+  $("err").style.display = "none"; $("result").style.display = "none";
+  go.disabled = true; go.textContent = "Analyzing…";
+  try {
+    const res = await fetch("/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text.value }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const d = data.detail;
+      throw new Error(typeof d === "string" ? d : "Please paste at least a couple of sentences.");
+    }
+    const pr = (data.probabilities.REAL ?? 0) * 100, pf = (data.probabilities.FAKE ?? 0) * 100;
+    const v = $("verdict");
+    v.textContent = `${data.label} · ${(data.confidence * 100).toFixed(1)}% confidence`;
+    v.className = "verdict " + data.label;
+    $("barR").style.width = pr + "%"; $("barF").style.width = pf + "%";
+    $("pR").textContent = `Real ${pr.toFixed(1)}%`; $("pF").textContent = `Fake ${pf.toFixed(1)}%`;
+    $("result").style.display = "block";
+  } catch (e) {
+    $("err").textContent = e.message || "Something went wrong.";
+    $("err").style.display = "block";
+  } finally {
+    go.disabled = false; go.textContent = "Analyze";
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+torch>=2.2
+transformers>=4.40
+datasets>=2.19
+accelerate>=0.30
+scikit-learn>=1.4
+pandas>=2.0
+numpy>=1.26
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
