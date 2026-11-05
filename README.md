@@ -105,3 +105,7 @@ pytest -q     # data-pipeline tests always run; API tests need torch + a trained
 - Add token-level explanations (e.g. SHAP or attention attribution) to the UI.
 - Calibrate the probabilities (temperature scaling) and report expected calibration error.
 - Publish the trained model on the Hugging Face Hub instead of shipping weights in the repo.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
