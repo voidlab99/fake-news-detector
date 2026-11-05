@@ -9,7 +9,7 @@ import json
 import numpy as np
 import torch
 from datasets import Dataset
-from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,

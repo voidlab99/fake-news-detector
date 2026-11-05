@@ -6,20 +6,19 @@ small web UI for real-time predictions.
 
 **Stack:** Python · Hugging Face Transformers · PyTorch · scikit-learn · FastAPI · Docker · GitHub Actions
 
-## Results
+## Evaluation
 
-Held-out test set (10% stratified split, fixed seed, identical for both models):
+Both models are trained and scored on the same stratified 80/10/10 split (fixed seed), so the
+comparison is like for like. Running the scripts writes the metrics to disk:
 
-| Model                        | F1  | Precision | Recall |
-|------------------------------|-----|-----------|--------|
-| TF-IDF + Logistic Regression | _fill in from `baseline_metrics.json`_ | | |
-| DistilBERT (fine-tuned)      | _fill in from `distilbert_metrics.json`_ | | |
+| Script            | Output                                             |
+|-------------------|----------------------------------------------------|
+| `baseline.py`     | `baseline_metrics.json` (TF-IDF + Logistic Regression) |
+| `train.py`        | `distilbert_metrics.json` (fine-tuned DistilBERT)  |
+| `evaluate.py`     | `results/` (precision, recall, F1, confusion matrix, misclassified articles) |
 
-Out-of-distribution check (`python evaluate.py --external other.csv`):
-
-| Model      | In-distribution F1 | External-dataset F1 | Drop |
-|------------|--------------------|---------------------|------|
-| DistilBERT | _fill in_          | _fill in_           |      |
+`python evaluate.py --external other.csv` scores the model on a dataset from a different source
+to measure how well it generalizes beyond the training distribution.
 
 ## Project layout
 
